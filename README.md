@@ -20,7 +20,7 @@ kafka.metrics.reporters=com.mickaelmaison.PrometheusMetricsReporter
 ```
 
 ### Kafka Clients
-Add the following to your broker configuration:
+Add the following to your client configuration:
 ```properties
 metric.reporters=com.mickaelmaison.PrometheusMetricsReporter
 ```
