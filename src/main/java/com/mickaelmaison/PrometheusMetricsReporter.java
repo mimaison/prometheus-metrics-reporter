@@ -36,16 +36,17 @@ import java.util.Set;
 public class PrometheusMetricsReporter implements KafkaMetricsReporter, MetricsReporter {
 
     private static final Logger LOG = LoggerFactory.getLogger(PrometheusMetricsReporter.class.getName());
-    private static final int PORT = 8080;
 
     private HTTPServer httpServer;
     private KafkaMetricsCollector kafkaMetricsCollector;
 
     @Override
     public void configure(Map<String, ?> map) {
-        kafkaMetricsCollector = new KafkaMetricsCollector();
+        PrometheusMetricsReporterConfig config = new PrometheusMetricsReporterConfig(map);
+        kafkaMetricsCollector = new KafkaMetricsCollector(config);
         try {
-            httpServer = new HTTPServer(PORT, true);
+            httpServer = new HTTPServer(config.port(), true);
+            LOG.info("HTTP server started on port " + config.port());
         } catch (IOException ioe) {
             LOG.error("Failed starting HTTP server", ioe);
             throw new RuntimeException(ioe);
@@ -56,7 +57,8 @@ public class PrometheusMetricsReporter implements KafkaMetricsReporter, MetricsR
 
     @Override
     public void init(VerifiableProperties props) {
-        CollectorRegistry.defaultRegistry.register(new YammerMetricsCollector());
+        PrometheusMetricsReporterConfig config = new PrometheusMetricsReporterConfig(props.props());
+        CollectorRegistry.defaultRegistry.register(new YammerMetricsCollector(config));
     }
 
     @Override
@@ -86,12 +88,10 @@ public class PrometheusMetricsReporter implements KafkaMetricsReporter, MetricsR
 
     @Override
     public void reconfigure(Map<String, ?> configs) {
-
     }
 
     @Override
     public void validateReconfiguration(Map<String, ?> configs) throws ConfigException {
-
     }
 
     @Override

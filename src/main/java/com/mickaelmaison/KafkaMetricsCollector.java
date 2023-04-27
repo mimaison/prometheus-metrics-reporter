@@ -32,8 +32,10 @@ public class KafkaMetricsCollector extends Collector {
     private static final Logger LOG = LoggerFactory.getLogger(KafkaMetricsCollector.class.getName());
 
     private final Map<MetricName, KafkaMetric> metrics;
+    private final PrometheusMetricsReporterConfig config;
 
-    public KafkaMetricsCollector() {
+    public KafkaMetricsCollector(PrometheusMetricsReporterConfig config) {
+        this.config = config;
         this.metrics = new ConcurrentHashMap<>();
     }
 
@@ -47,6 +49,9 @@ public class KafkaMetricsCollector extends Collector {
             LOG.trace("Collecting Kafka metric {}", metricName);
 
             String name = metricName(metricName);
+            if (!config.isAllowed(name)) {
+                continue;
+            }
             MetricFamilySamples sample = convert(name, metricName.description(), kafkaMetric, metricName.tags());
             if (sample != null) {
                 samples.add(sample);

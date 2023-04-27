@@ -40,8 +40,10 @@ public class YammerMetricsCollector extends Collector {
     private static final Logger LOG = LoggerFactory.getLogger(YammerMetricsCollector.class.getName());
 
     private final MetricsRegistry registry;
+    private final PrometheusMetricsReporterConfig config;
 
-    public YammerMetricsCollector() {
+    public YammerMetricsCollector(PrometheusMetricsReporterConfig config) {
+        this.config = config;
         this.registry = KafkaYammerMetrics.defaultRegistry();
     }
 
@@ -55,6 +57,9 @@ public class YammerMetricsCollector extends Collector {
             LOG.trace("Collecting Yammer metric {}", metricName);
 
             String name = metricName(metricName);
+            if (!config.isAllowed(name)) {
+                continue;
+            }
             Map<String, String> labels = labelsFromScope(metricName.getScope());
 
             MetricFamilySamples sample = null;
