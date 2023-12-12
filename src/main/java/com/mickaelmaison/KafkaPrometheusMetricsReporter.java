@@ -19,46 +19,33 @@ package com.mickaelmaison;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.exporter.HTTPServer;
 import io.prometheus.client.hotspot.DefaultExports;
-import kafka.metrics.KafkaMetricsReporter;
-import kafka.utils.VerifiableProperties;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.metrics.KafkaMetric;
+import org.apache.kafka.common.metrics.MetricsContext;
 import org.apache.kafka.common.metrics.MetricsReporter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
-public class PrometheusMetricsReporter implements KafkaMetricsReporter, MetricsReporter {
+public class KafkaPrometheusMetricsReporter implements MetricsReporter {
 
-    private static final Logger LOG = LoggerFactory.getLogger(PrometheusMetricsReporter.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(KafkaPrometheusMetricsReporter.class.getName());
 
-    private HTTPServer httpServer;
     private KafkaMetricsCollector kafkaMetricsCollector;
+    private Optional<HTTPServer> httpServer;
 
     @Override
     public void configure(Map<String, ?> map) {
         PrometheusMetricsReporterConfig config = new PrometheusMetricsReporterConfig(map);
         kafkaMetricsCollector = new KafkaMetricsCollector(config);
-        try {
-            httpServer = new HTTPServer(config.port(), true);
-            LOG.info("HTTP server started on port " + config.port());
-        } catch (IOException ioe) {
-            LOG.error("Failed starting HTTP server", ioe);
-            throw new RuntimeException(ioe);
-        }
         // Add JVM metrics
         DefaultExports.initialize();
-    }
-
-    @Override
-    public void init(VerifiableProperties props) {
-        PrometheusMetricsReporterConfig config = new PrometheusMetricsReporterConfig(props.props());
-        CollectorRegistry.defaultRegistry.register(new YammerMetricsCollector(config));
+        httpServer = config.startHttpServer();
     }
 
     @Override
@@ -71,19 +58,19 @@ public class PrometheusMetricsReporter implements KafkaMetricsReporter, MetricsR
 
     @Override
     public void metricChange(KafkaMetric metric) {
+        LOG.info("Kafka metricChange " + metric.metricName());
         kafkaMetricsCollector.addMetric(metric);
     }
 
     @Override
     public void metricRemoval(KafkaMetric metric) {
+        LOG.info("Kafka metricRemoval " + metric.metricName());
         kafkaMetricsCollector.removeMetric(metric);
     }
 
     @Override
     public void close() {
-        if (httpServer != null) {
-            httpServer.close();
-        }
+        LOG.info("Closing the HTTP server");
     }
 
     @Override
@@ -97,5 +84,16 @@ public class PrometheusMetricsReporter implements KafkaMetricsReporter, MetricsR
     @Override
     public Set<String> reconfigurableConfigs() {
         return Collections.emptySet();
+    }
+
+    @Override
+    public void contextChange(MetricsContext metricsContext) {
+        LOG.info("Kafka contextChange with " + metricsContext.contextLabels());
+        String prefix = metricsContext.contextLabels().get(MetricsContext.NAMESPACE);
+        kafkaMetricsCollector.setPrefix(prefix);
+    }
+
+    public int getPort() {
+        return httpServer.get().getPort();
     }
 }

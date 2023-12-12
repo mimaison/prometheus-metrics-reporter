@@ -16,21 +16,26 @@
  */
 package com.mickaelmaison;
 
-import static org.junit.Assert.assertTrue;
-
+import io.prometheus.client.CollectorRegistry;
+import kafka.utils.VerifiableProperties;
+import org.junit.Before;
 import org.junit.Test;
 
-/**
- * Unit test for simple App.
- */
-public class PrometheusMetricsReporterTest
-{
-    /**
-     * Rigorous Test :-)
-     */
+import java.util.Properties;
+
+public class YammerPrometheusMetricsReporterTest {
+
+    @Before
+    public void setup() {
+        CollectorRegistry.defaultRegistry.clear();
+    }
+
     @Test
-    public void shouldAnswerWithTrue()
-    {
-        assertTrue( true );
+    public void testLifeCycle() {
+        YammerPrometheusMetricsReporter reporter = new YammerPrometheusMetricsReporter();
+        Properties configs = new Properties();
+        configs.put("broker.id", "0");
+        configs.put(PrometheusMetricsReporterConfig.PORT_CONFIG, "0");
+        reporter.init(new VerifiableProperties(configs));
     }
 }

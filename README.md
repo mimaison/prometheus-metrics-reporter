@@ -15,14 +15,14 @@ mvn package assembly:single
 ### Kafka Brokers
 Add the following to your broker configuration:
 ```properties
-metric.reporters=com.mickaelmaison.PrometheusMetricsReporter
-kafka.metrics.reporters=com.mickaelmaison.PrometheusMetricsReporter
+metric.reporters=com.mickaelmaison.KafkaPrometheusMetricsReporter
+kafka.metrics.reporters=com.mickaelmaison.YammerPrometheusMetricsReporter
 ```
 
 ### Kafka Clients
 Add the following to your client configuration:
 ```properties
-metric.reporters=com.mickaelmaison.PrometheusMetricsReporter
+metric.reporters=com.mickaelmaison.KafkaPrometheusMetricsReporter
 ```
 
 ## Access Metrics

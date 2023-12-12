@@ -16,14 +16,22 @@
  */
 package com.mickaelmaison;
 
+import io.prometheus.client.exporter.HTTPServer;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.net.BindException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 public class PrometheusMetricsReporterConfig extends AbstractConfig {
+
+    private static final Logger LOG = LoggerFactory.getLogger(PrometheusMetricsReporterConfig.class.getName());
 
     public static final String CONFIG_PREFIX = "prometheus.metrics.reporter.";
 
@@ -39,13 +47,13 @@ public class PrometheusMetricsReporterConfig extends AbstractConfig {
             .define(PORT_CONFIG, ConfigDef.Type.INT, PORT_CONFIG_DEFAULT, ConfigDef.Importance.HIGH, PORT_CONFIG_DOC)
             .define(ALLOWLIST_CONFIG, ConfigDef.Type.LIST, ALLOWLIST_CONFIG_DEFAULT, ConfigDef.Importance.HIGH, ALLOWLIST_CONFIG_DOC);
 
-    private final Pattern allowlist;
     private final int port;
+    private final Pattern allowlist;
 
     public PrometheusMetricsReporterConfig(Map<?, ?> props) {
         super(CONFIG_DEF, props);
-        port = getInt(PORT_CONFIG);
-        allowlist = compileAllowlist(getList(ALLOWLIST_CONFIG));
+        this.port = getInt(PORT_CONFIG);
+        this.allowlist = compileAllowlist(getList(ALLOWLIST_CONFIG));
     }
 
     public int port() {
@@ -68,4 +76,22 @@ public class PrometheusMetricsReporterConfig extends AbstractConfig {
                 ", port=" + port +
                 '}';
     }
+
+    public synchronized Optional<HTTPServer> startHttpServer() {
+        // TODO if port is -1, don't start the server
+        // TODO the HTTPServer instance is never closed
+        try {
+            HTTPServer httpServer = new HTTPServer(port, true);
+            LOG.info("HTTP server started on port " + port);
+            new Exception().printStackTrace();
+            return Optional.of(httpServer);
+        } catch (BindException be) {
+            LOG.info("HTTP server already started");
+            return Optional.empty();
+        } catch (IOException ioe) {
+            LOG.error("Failed starting HTTP server", ioe);
+            throw new RuntimeException(ioe);
+        }
+    }
+
 }

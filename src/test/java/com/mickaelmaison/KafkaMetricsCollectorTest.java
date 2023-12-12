@@ -49,15 +49,16 @@ public class KafkaMetricsCollectorTest {
     @Test
     public void testCollect() {
         Map<String, String> props = new HashMap<>();
-        props.put(PrometheusMetricsReporterConfig.ALLOWLIST_CONFIG, "group_name.*");
+        props.put(PrometheusMetricsReporterConfig.ALLOWLIST_CONFIG, "kafka_server_group_name.*");
         PrometheusMetricsReporterConfig config = new PrometheusMetricsReporterConfig(props);
         KafkaMetricsCollector collector = new KafkaMetricsCollector(config);
+        collector.setPrefix("kafka.server");
 
         List<Collector.MetricFamilySamples> metrics = collector.collect();
         assertTrue(metrics.isEmpty());
 
         // Adding a metric not matching the allowlist does nothing
-        collector.addMetric(buildMetric("name", "othergroup", 2.0));
+        collector.addMetric(buildMetric("name", "other", 2.0));
         metrics = collector.collect();
         assertTrue(metrics.isEmpty());
 
@@ -70,7 +71,7 @@ public class KafkaMetricsCollectorTest {
         collector.addMetric(buildMetric("name", "group", 1.0));
         metrics = collector.collect();
         assertEquals(1, metrics.size());
-        assertEquals("group_name", metrics.get(0).name);
+        assertEquals("kafka_server_group_name", metrics.get(0).name);
         assertEquals(1, metrics.get(0).samples.size());
         assertEquals(1.0, metrics.get(0).samples.get(0).value, 0.1);
         assertEquals(new ArrayList<>(labels.keySet()), metrics.get(0).samples.get(0).labelNames);
@@ -80,7 +81,7 @@ public class KafkaMetricsCollectorTest {
         collector.addMetric(buildMetric("name", "group", 3.0));
         metrics = collector.collect();
         assertEquals(1, metrics.size());
-        assertEquals("group_name", metrics.get(0).name);
+        assertEquals("kafka_server_group_name", metrics.get(0).name);
         assertEquals(1, metrics.get(0).samples.size());
         assertEquals(3.0, metrics.get(0).samples.get(0).value, 0.1);
 

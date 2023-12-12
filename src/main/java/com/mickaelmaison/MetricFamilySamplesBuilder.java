@@ -20,6 +20,7 @@ import com.yammer.metrics.stats.Snapshot;
 import io.prometheus.client.Collector;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,10 +47,10 @@ public class MetricFamilySamplesBuilder {
     }
 
     MetricFamilySamplesBuilder addQuantileSamples(String name, Snapshot snapshot, Map<String, String> labels) {
-        for (double quantile : new double[]{0.50, 0.75, 0.95, 0.98, 0.99, 0.999}) {
+        for (String quantile : Arrays.asList("0.50", "0.75", "0.95", "0.98", "0.99", "0.999")) {
             Map<String, String> newLabels = new HashMap<>(labels);
-            newLabels.put("quantile", String.valueOf(quantile));
-            addSample(name, snapshot.getValue(quantile), newLabels);
+            newLabels.put("quantile", quantile);
+            addSample(name, snapshot.getValue(Double.parseDouble(quantile)), newLabels);
         }
         return this;
     }
